@@ -1,0 +1,68 @@
+html
+	head
+		title Code Immersives Timesheet
+		style.
+			body {
+				max-width: 1200px;
+				margin: 0 auto;
+			}
+			.row {
+				display: flex;
+				flex-direction: row;
+				flex-wrap: nowrap;
+			}
+			.col-sm {
+				flex-basis: 16%;
+			}
+			.col {
+				flex-basis: 28%;
+			}
+			.hour-input {
+				width: 60px;
+			}
+			.rate-input {
+				width: 60px;
+			}
+			.container {
+				padding: 20px;
+				max-width: 600px;
+			}
+	body
+		.container
+			h1 Code Immersives Timesheet
+			form(action="/timesheet" method="post")
+				.row
+					.col-sm
+						p 
+							strong Weekday
+					.col
+						p 
+							strong Date
+					.col
+						p 
+							strong Instruction time
+					.col
+						p 
+							strong Prep time
+				each day in days
+					.row
+						.col-sm
+							p=day.weekday
+						.col
+							p=day.date
+						.col
+							input.hour-input(type="number" value="0" name=day.date)
+							|  hours
+						.col
+							input.hour-input(type="number" value="0" name=day.date)
+							|  hours
+				p Instruction rate: $
+					| 
+					input.rate-input(type="number" name="instructionRate")
+				p Prep rate: $
+					| 
+					input.rate-input(type="number" name="prepRate")
+				p 
+					input(type="text" placeholder="Your name" name="name")
+				p
+					input(type="submit" value="Submit")
