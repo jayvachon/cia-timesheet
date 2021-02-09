@@ -7,6 +7,11 @@ const MemoryStore = require('memorystore')(session);
 const cookieParser = require('cookie-parser');
 const dt = require('luxon');
 const PDFDocument = require('pdfkit');
+const PDFTable = require('voilab-pdf-table')
+const _ = require('lodash');
+const fs = require('fs');
+const path = require('path');
+const appRoot = require('app-root-path');
 const router = express.Router();
 const PORT = process.env.PORT;
 
@@ -70,12 +75,74 @@ router.post('/', (req, res) => {
 	let totalPrepPay = Number(prepRate) * totalPrepTime;
 	let totalPay = totalInstructionPay + totalPrepPay;
 
-	let pdfDoc = new PDFDocument;
-	pdfDoc.pipe(fs.createWriteStream(`${appRoot}/pdfs/SampleDocument.pdf`));
-	pdfDoc.text("My Sample PDF Document");
+	let pdfDoc = new PDFDocument({
+		autoFirstPage: false,
+	});
+
+	let table = new PDFTable(pdfDoc, {
+		bottomMargin: 30
+	});
+	table.addColumns([
+		{
+			id: 'date',
+			header: 'Date',
+			align: 'left',
+			width: 60,
+		},
+		{
+			id: 'instruction',
+			header: 'Instruction Hours',
+			width: 120,
+		},
+		{
+			id: 'prep',
+			header: 'Prep Hours',
+			width: 120,
+		},
+	])
+	.onPageAdded(tb => tb.addHeader());
+
+	pdfDoc.addPage();
+
+	let title = `${submitter} Timesheet`
+	let subtitle = `Week beginning ${keys[0]}`;
+	pdfDoc.fontSize(24);
+	pdfDoc.text(title);
+	pdfDoc.fontSize(12);
+	pdfDoc.text(subtitle);
+	pdfDoc.moveDown();
+
+	// pdfDoc.text('Date, Instruction Hours, Prep Hours')
+	let rows = _.map(keys, k => {
+		return { date: k, instruction: req.body[k][0], prep: req.body[k][1], };
+	});
+	
+	table.addBody(rows);
+
+	pdfDoc.moveDown();
+
+	pdfDoc.text(`Total instruction hours: ${totalInstructionTime}`, 72);
+	pdfDoc.text(`Total prep hours: ${totalPrepTime}`);
+	pdfDoc.text(`Instruction rate: $${instructionRate}`);
+	pdfDoc.text(`Prep rate: $${prepRate}`);
+	pdfDoc.text(`Total instruction pay: $${totalInstructionPay}`);
+	pdfDoc.text(`Total prep pay: $${totalPrepPay}`);
+	pdfDoc.moveDown();
+	pdfDoc.text(`Total pay: $${totalPay}`);
+	let friendlyDate = keys[0].replace('/', '-').replace('/', '-');
+	let file = `${appRoot}/pdfs/${submitter}_Timesheet_${friendlyDate}.pdf`;
+	let ws = fs.createWriteStream(file)
+	pdfDoc.pipe(ws);
+
 	pdfDoc.end();
 
-	res.send("Timesheet submitted successfully! You are beautiful.")
+	ws.on('finish', () => {
+		let filename = path.basename(file);
+		res.download(file, filename, err => {
+			fs.unlinkSync(file, err => console.error(err));
+		});
+		// res.send("Timesheet submitted successfully! You are beautiful.")
+	});
 });
 
 app.listen(PORT);
