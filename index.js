@@ -40,7 +40,7 @@ router.get('/', (req, res) => {
 
 	let firstDueDate = dt.DateTime.local(2019, 5, 2);
 	let i = 0;
-	while(firstDueDate.plus({days: i}).plus({days: 14}) < dt.DateTime.local()) { i += 14; }
+	while(firstDueDate.plus({days: i}).plus({days: 15}) < dt.DateTime.local()) { i += 14; }
 	let currentWeekStartDate = firstDueDate.plus({days: i});
 	let currentWeek = [];
 	for (let j = 0; j < 14; j++) {
